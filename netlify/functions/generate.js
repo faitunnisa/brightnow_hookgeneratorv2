@@ -14,9 +14,10 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: body.messages,
         temperature: 0.8,
+        response_format: { type: "json_object" },
       }),
     });
 
@@ -26,7 +27,7 @@ exports.handler = async function (event) {
       throw new Error(data.error?.message || "Groq API error");
     }
 
-    // Normalize Groq response shape to match what index.html expects
+    // Normalize Groq response to match what index.html expects
     const normalized = {
       content: [
         {

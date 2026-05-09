@@ -307,10 +307,9 @@ BRIEF:
 ${ctx ? `- Extra Context: ${ctx}` : ''}
 ${tone ? `- Tone: Make output ${tone}` : ''}
 
-Generate a complete TikTok content package. Use natural Bahasa Indonesia mixed with English like real TikTok ID creators. Be specific — NOT generic. Reference actual product ingredients, clinical numbers, and lifestyle contexts.
+Generate a TikTok content package in Bahasa Indonesia mixed with English. Be specific, use actual ingredients and clinical numbers. Keep ALL field values SHORT (max 15 words each).
 
-Return ONLY valid JSON, no markdown fences:
-{"hooks":["h1","h2","h3","h4","h5","h6","h7","h8","h9","h10"],"angle":"2-3 sentence content angle","format":"e.g. 20s music-only","visual_hook":"what viewer sees in 0-2 seconds","structure":{"hook":"","tension":"","bridge":"","proof":"","payoff":"","cta":""},"script":[{"label":"HOOK 0-3s","vo":"","onscreen":"","note":""},{"label":"PROBLEM 3-8s","vo":"","onscreen":"","note":""},{"label":"BRIDGE 8-15s","vo":"","onscreen":"","note":""},{"label":"PROOF 15-25s","vo":"","onscreen":"","note":""},{"label":"PAYOFF 25-35s","vo":"","onscreen":"","note":""},{"label":"CTA 35-40s","vo":"","onscreen":"","note":""}],"talking_points":["p1","p2","p3","p4","p5"],"cta_options":["c1","c2","c3"],"caption":"TikTok caption max 150 chars Bahasa Indonesia","hashtags":["#t1","#t2","#t3","#t4","#t5","#t6","#t7","#t8","#t9","#t10"],"funnel_note":"funnel stage and why"}`;
+Return ONLY a valid JSON object with exactly these keys: hooks (array of 10 short hook strings), angle (1 sentence), format (e.g. "20s music-only"), visual_hook (1 sentence), structure (object with keys hook/tension/bridge/proof/payoff/cta each 1 short sentence), script (array of 6 objects each with label/vo/onscreen/note all short), talking_points (array of 5 short strings), cta_options (array of 3 strings), caption (max 100 chars Bahasa Indonesia), hashtags (array of 10 hashtag strings), funnel_note (1 sentence)`;
 
   try {
     // Calls Netlify Function — API key stays safe on server
