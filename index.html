@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrightNow Hook Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00FFE7;
+  --pink: #FF2D87;
+  --yellow: #FFE600;
+  --purple: #BF5FFF;
+  --green: #00FF9D;
+  --bg: #0A0A0F;
+  --surface: #12121A;
+  --card: #1A1A26;
+  --border: #2A2A3E;
+  --text: #F0F0FF;
+  --muted: #8888AA;
+  --dim: #4A4A6A;
+  --font-d: 'Syne', sans-serif;
+  --font-b: 'Space Grotesk', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,231,0.012) 2px, rgba(0,255,231,0.012) 4px); pointer-events: none; z-index: 1000; }
+
+.hdr { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 34px; height: 34px; background: linear-gradient(135deg, var(--cyan), var(--pink)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-weight: 800; font-size: 14px; color: #000; }
+.logo-text { font-family: var(--font-d); font-weight: 700; font-size: 15px; }
+.logo-text span { color: var(--cyan); }
+.badges { display: flex; gap: 6px; }
+.badge { font-family: var(--font-m); font-size: 10px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.bc { background: rgba(0,255,231,0.1); color: var(--cyan); border: 1px solid rgba(0,255,231,0.2); }
+.bp { background: rgba(255,45,135,0.1); color: var(--pink); border: 1px solid rgba(255,45,135,0.2); }
+
+.main { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 60px); }
+
+.left { background: var(--surface); border-right: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; max-height: calc(100vh - 60px); position: sticky; top: 60px; display: flex; flex-direction: column; gap: 1.125rem; }
+.slbl { font-family: var(--font-m); font-size: 10px; color: var(--cyan); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.slbl::before { content: ''; width: 14px; height: 1px; background: var(--cyan); }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.pill { font-size: 11px; padding: 5px 10px; border-radius: 100px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; transition: all 0.12s; font-family: var(--font-b); }
+.pill:hover { border-color: var(--cyan); color: var(--cyan); }
+.pill.a0 { background: rgba(0,255,231,0.1); border-color: var(--cyan); color: var(--cyan); }
+.pill.a1 { background: rgba(0,255,157,0.1); border-color: var(--green); color: var(--green); }
+.pill.a2 { background: rgba(255,45,135,0.1); border-color: var(--pink); color: var(--pink); }
+.pill.a3 { background: rgba(191,95,255,0.1); border-color: var(--purple); color: var(--purple); }
+textarea { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: var(--font-b); font-size: 12px; resize: none; height: 64px; line-height: 1.5; }
+textarea:focus { outline: none; border-color: var(--cyan); }
+textarea::placeholder { color: var(--dim); }
+.genbtn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--cyan), var(--pink)); border: none; border-radius: 8px; color: #000; font-family: var(--font-d); font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.genbtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,255,231,0.18); }
+.genbtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.right { padding: 1.75rem; background: var(--bg); overflow-y: auto; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 14px; text-align: center; }
+.empty-icon { font-size: 40px; opacity: 0.2; }
+.empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--muted); }
+.empty-sub { font-size: 12px; color: var(--dim); max-width: 280px; line-height: 1.7; }
+.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 420px; gap: 18px; }
+.spin { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: sp 0.75s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.lmsg { font-family: var(--font-m); font-size: 11px; color: var(--cyan); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+.ohdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.otitle { font-family: var(--font-d); font-size: 18px; font-weight: 800; background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.ometa { font-family: var(--font-m); font-size: 10px; color: var(--dim); margin-top: 2px; }
+.rrow { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1.125rem; padding: 10px 12px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
+.rlbl { font-family: var(--font-m); font-size: 9px; color: var(--dim); width: 100%; margin-bottom: 4px; letter-spacing: 0.1em; text-transform: uppercase; }
+.tbtn { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-family: var(--font-b); transition: all 0.12s; }
+.tbtn:hover { border-color: var(--green); color: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.125rem; }
+.tab { font-size: 11px; padding: 8px 13px; color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.12s; font-family: var(--font-m); letter-spacing: 0.05em; }
+.tab:hover { color: var(--muted); }
+.tab.on { color: var(--cyan); border-bottom-color: var(--cyan); }
+.tc { display: none; }
+.tc.on { display: block; }
+
+.hcard { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; transition: border-color 0.12s; }
+.hcard:hover { border-color: var(--cyan); }
+.hnum { font-family: var(--font-m); font-size: 10px; color: var(--cyan); opacity: 0.5; min-width: 20px; padding-top: 2px; }
+.htxt { font-size: 12px; line-height: 1.65; flex: 1; color: var(--text); }
+.cpbtn { font-size: 10px; padding: 3px 8px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--dim); cursor: pointer; white-space: nowrap; transition: all 0.12s; font-family: var(--font-m); }
+.cpbtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.fbtn { font-size: 10px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--dim); cursor: pointer; transition: all 0.12s; }
+.fbtn:hover { color: var(--pink); border-color: var(--pink); }
+
+.blk { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+.blbl { font-family: var(--font-m); font-size: 9px; color: var(--pink); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 9px; display: flex; justify-content: space-between; align-items: center; }
+.bbody { font-size: 12px; line-height: 1.7; color: var(--text); }
+.brow { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.brow:last-child { border-bottom: none; }
+.beat-lbl { font-family: var(--font-m); font-size: 9px; color: var(--yellow); min-width: 82px; padding-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+.bbod { flex: 1; color: var(--text); line-height: 1.6; }
+.bnote { font-size: 10px; color: var(--muted); margin-top: 3px; font-style: italic; }
+.srow { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.srow:last-child { border-bottom: none; }
+.skey { font-family: var(--font-m); font-size: 9px; color: var(--cyan); min-width: 65px; text-transform: uppercase; padding-top: 2px; letter-spacing: 0.05em; }
+.sval { flex: 1; color: var(--text); line-height: 1.6; }
+.trow { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.trow:last-child { border-bottom: none; }
+.tn { font-family: var(--font-m); font-size: 10px; color: var(--yellow); min-width: 18px; padding-top: 2px; }
+.tv { font-size: 12px; line-height: 1.55; color: var(--text); }
+.htags { display: flex; flex-wrap: wrap; gap: 5px; }
+.htag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(191,95,255,0.1); border: 1px solid rgba(191,95,255,0.22); color: var(--purple); font-family: var(--font-m); }
+.ctabox { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.65; color: var(--text); margin-bottom: 6px; background: rgba(0,255,231,0.03); }
+.acts { display: flex; gap: 6px; margin-top: 0.75rem; }
+.abtn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font-b); transition: all 0.12s; text-align: center; }
+.abtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.fitem { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 5px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+.delbtn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 12px; flex-shrink: 0; transition: color 0.12s; }
+.delbtn:hover { color: var(--pink); }
+.errbx { background: rgba(255,45,135,0.08); border: 1px solid rgba(255,45,135,0.25); border-radius: 8px; padding: 14px; font-size: 12px; color: var(--pink); line-height: 1.65; }
+.toast { position: fixed; bottom: 22px; right: 22px; background: var(--card); border: 1px solid var(--green); border-radius: 8px; padding: 9px 14px; font-size: 11px; color: var(--green); font-family: var(--font-m); transform: translateY(60px); transition: transform 0.25s; z-index: 999; }
+.toast.show { transform: translateY(0); }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark">BN</div>
+    <div class="logo-text">BrightNow <span>Hook Gen</span></div>
+  </div>
+  <div class="badges">
+    <span class="badge bc">AI-POWERED</span>
+    <span class="badge bp">TIKTOK NATIVE</span>
+  </div>
+</header>
+
+<main class="main">
+  <aside class="left">
+    <div>
+      <div class="slbl">1. Objective</div>
+      <div class="pills">
+        <button class="pill a0" data-g="obj" data-v="Awareness">Awareness</button>
+        <button class="pill" data-g="obj" data-v="Engagement">Engagement</button>
+        <button class="pill" data-g="obj" data-v="Consideration">Consideration</button>
+        <button class="pill" data-g="obj" data-v="Conversion">Conversion</button>
+        <button class="pill" data-g="obj" data-v="Product Education">Product Edu</button>
+        <button class="pill" data-g="obj" data-v="Trendjacking">Trendjacking</button>
+        <button class="pill" data-g="obj" data-v="Social Proof">Social Proof</button>
+        <button class="pill" data-g="obj" data-v="Problem-Solution">Problem-Solution</button>
+        <button class="pill" data-g="obj" data-v="Affiliate / BOFU">Affiliate/BOFU</button>
+      </div>
+    </div>
+    <div>
+      <div class="slbl">2. Product / Variant</div>
+      <div class="pills">
+        <button class="pill a1" data-g="prod" data-v="Oil Control — Vitamin C + Mugwort Clay (oily skin, big pores, blackheads, dullness)">Oil Control</button>
+        <button class="pill" data-g="prod" data-v="Smooth Glow F(X) — Glutathione + Bio-Enzyme (dry, textured, rough, dull skin)">Smooth Glow F(X)</button>
+        <button class="pill" data-g="prod" data-v="Both variants — Oil Control vs Smooth Glow comparison or battle">Both Variants</button>
+      </div>
+    </div>
+    <div>
+      <div class="slbl">3. Target Audience</div>
+      <div class="pills">
+        <button class="pill a2" data-g="aud" data-v="Anak sekolah / Gen Alpha SMP-SMA (school air context)">Anak Sekolah</button>
+        <button class="pill" data-g="aud" data-v="Gen Z usia 18-25">Gen Z</button>
+        <button class="pill" data-g="aud" data-v="First-time skincare users / face wash beginners">Skincare Beginners</button>
+        <button class="pill" data-g="aud" data-v="Oily skin / kulit berminyak">Oily Skin</button>
+        <button class="pill" data-g="aud" data-v="Dry or textured skin / kulit kering gradakan">Dry/Textured Skin</button>
+        <button class="pill" data-g="aud" data-v="Acne-prone or sensitive skin">Acne-Prone</button>
+        <button class="pill" data-g="aud" data-v="Daily makeup wearers — anti-longsor anti-patchy">Makeup Lovers</button>
+        <button class="pill" data-g="aud" data-v="TikTok trend explorers / FOMO skincare buyers">Trend Chasers</button>
+      </div>
+    </div>
+    <div>
+      <div class="slbl">4. Hook Style</div>
+      <div class="pills">
+        <button class="pill" data-g="hook" data-v="Relatable pain point">Pain Point</button>
+        <button class="pill a3" data-g="hook" data-v="POV / storytelling school life context">POV Story</button>
+        <button class="pill" data-g="hook" data-v="Before-after transformation">Before-After</button>
+        <button class="pill" data-g="hook" data-v="Myth-busting">Myth Busting</button>
+        <button class="pill" data-g="hook" data-v="Discovery / sumpah baru tahu / ingredient revelation">Discovery Hook</button>
+        <button class="pill" data-g="hook" data-v="Honest review / social proof style">Social Proof</button>
+        <button class="pill" data-g="hook" data-v="Challenge or battle format">Challenge/Battle</button>
+        <button class="pill" data-g="hook" data-v="FOMO or urgency">FOMO/Urgency</button>
+        <button class="pill" data-g="hook" data-v="Bestie or friendship framing">Bestie Frame</button>
+        <button class="pill" data-g="hook" data-v="School life tension / school air survival">School Life</button>
+        <button class="pill" data-g="hook" data-v="Direct conversion / hard sell with price anchor">Hard Sell</button>
+        <button class="pill" data-g="hook" data-v="Ingredient science education">Ingredient Drop</button>
+      </div>
+    </div>
+    <div>
+      <div class="slbl">5. Extra Context <span style="font-size:9px;opacity:0.4">(optional)</span></div>
+      <textarea id="ctx" placeholder="e.g. UTS/UAS season, Ramadan, post-PE, new campaign..."></textarea>
+    </div>
+    <button class="genbtn" id="gbtn" onclick="doGen()">⚡ Generate Content</button>
+  </aside>
+
+  <section class="right" id="rpanel">
+    <div class="empty" id="eview">
+      <div class="empty-icon">✦</div>
+      <div class="empty-title">Configure & Generate</div>
+      <div class="empty-sub">Select objective, product, audience, and hook style on the left — then hit Generate.</div>
+    </div>
+    <div class="loader" id="lview" style="display:none">
+      <div class="spin"></div>
+      <div class="lmsg" id="lmsg">Generating from BrightNow formula database...</div>
+    </div>
+    <div id="oview" style="display:none"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const S = {
+  obj: 'Awareness',
+  prod: 'Oil Control — Vitamin C + Mugwort Clay (oily skin, big pores, blackheads, dullness)',
+  aud: 'Anak sekolah / Gen Alpha SMP-SMA (school air context)',
+  hook: 'POV / storytelling school life context',
+  out: null,
+  favs: JSON.parse(localStorage.getItem('bn3f') || '[]')
+};
+
+const ACLS = { obj: 'a0', prod: 'a1', aud: 'a2', hook: 'a3' };
+document.querySelectorAll('.pill').forEach(b => {
+  b.addEventListener('click', () => {
+    const g = b.dataset.g, c = ACLS[g];
+    document.querySelectorAll(`.pill[data-g="${g}"]`).forEach(p => p.classList.remove(c));
+    b.classList.add(c);
+    S[g] = b.dataset.v;
+  });
+});
+
+const KB = `BRIGHTNOW BY WARDAH — BRAND & PRODUCT KNOWLEDGE
+
+BRAND TAGLINE: "BRIGHT HERE, BRIGHT NOW — No more poreblems. Bright in seconds."
+FORMULA TECH (all variants): Amino Bubble Tech — amino surfactant from glycine (skin protein), creates fluffy creamy foam, gentle non-stripping, 94% agree skin feels comfortable, 0% alcohol, non-acnegenic, non-comedogenic, dermatologically tested.
+
+VARIANT A — OIL CTRL (blue tube)
+Ingredients: Vitamin C + Mugwort Clay
+Skin target: oily, big pores, blackheads (komedo), dull from oxidation
+Clinical data: -32.55% excess oil instantly, -10.43% pore appearance in 7 days, 85% agree brightens instantly, +17.82% hydration
+Key message: "Clay-mask power tanpa ribet — cukup cuci muka sekali"
+Hook angles: Mugwort (biasa di clay mask) kini di face wash; pori kayak strawberry jadi kayak kulit telur; blotting paper stays clean
+
+VARIANT B — SMOOTH GLOW F(X) (pink tube)
+Ingredients: Glutathione + Bio-Enzyme (Papain Bioenzyme)
+Skin target: dry, rough/textured (gradakan/chicken skin), dead skin buildup, dull, uneven texture
+Clinical data: 100% agree smoothen skin instantly, +23% hydration, 96% agree brighten, 100% improve texture in 7 days
+Key messages: "Glutathione supplement kini di face wash"; "Bio-Enzyme: smart enzyme lifts dead skin only"
+
+CONSUMER PERSONAS:
+- Dedicated students (SMP-SMA): Excessive sun/outdoor, oily tired acne-prone. Hook: "Pulang sekolah muka capek dan lepek, auto glowing lagi"
+- Makeup wearers: Makeup longsor/cakey/transfers to hijab. Hook: "Skin prep dimulai dari cuci muka bukan toner"
+- Face wash beginners: Foam feels tight OR gentle feels unclean. Hook: "Busa sebanyak ini tapi malah lembab?"
+- TikTok trend explorers: Want glutathione/mugwort without heavy steps. Hook: "Galau coba suplemen glutathione? Ada versi face washnya"
+
+WINNING HOOK PATTERNS (from high-CTR data):
+1. Raw unfiltered skin close-up in 0-3s — no filter, no studio
+2. "Ga bikin ketarik/kering" = #1 verbal proof — in every winning VO video
+3. Ingredient revelation: "Sumpah baru tahu / ternyata ada"
+4. Price comes LAST never first: "cuma [harga], kemurahan dibanding kualitasnya"
+5. POV label: "POV: Kulit kamu abis seharian school air"
+6. Foam close-up = most satisfying visual for facial wash
+7. Anti-objection addressed MID-demo not at end
+8. Sound-off parity: all key claims must exist as on-screen text too
+
+CONTENT STRUCTURES:
+A — POV School (15-20s, music only): School context → Before skin → wash → After → CTA
+B — Ingredient Reveal (45-75s, full VO): Sumpah baru tahu → science → product → self-proof → demo/foam → price shock → CTA
+C — Before/After Foam (17-25s, hybrid): Before raw → foam close-up + anti-objection → rinse → after → CTA
+D — Hack Format (15-18s, music): Pattern-interrupt visual → reveal → demo → glow → CTA
+E — Lab/Science (20-30s, text+music): Fear hook → problem attribution → proof → benefits → CTA
+F — Battle (40-55s, music): Shock visual → oil ctrl vs smooth glow setup → demo each → poll → CTA
+
+PROVEN HOOKS: "POV: Kulit kamu abis seharian sekolah. Ini ritual wajibnya." / "Sumpah baru tahu ada facial wash yang punya Glutathione" / "Biarpun busanya banyak tapi ga bikin muka jadi kering" / "Cuci muka 5 detik AUTO cerah?" / "Makeup belum 2 jam udah longsor?" / "Clay-mask power tanpa ribet — cukup cuci muka sekali"
+
+CTAs: "Checkout di bawah!" / "Cuma [harga] — klik sekarang" / "Which one: Oil Control atau Smooth Glow?" / "Join live untuk harga promo"
+
+HASHTAGS: #BrightNowFaceWash #BrightHereBrightNow #WardahBrightNow #FacialWashViral #CerahWajah #CircleBrightNow #FacialWashRemaja #FacialWashAntiKomedo1 #ParagonianCuciMuka #TokoFacialWash
+
+AVOID: Leading with product logo; studio lighting; vague claims; saving anti-dry objection for end; generic "beli sekarang" CTAs`;
+
+const LMSGS = ['Generating hooks...', 'Applying BrightNow formulas...', 'Crafting Gen Z copy...', 'Almost done!'];
+
+async function doGen(tone = '') {
+  const ctx = document.getElementById('ctx').value.trim();
+  document.getElementById('eview').style.display = 'none';
+  document.getElementById('oview').style.display = 'none';
+  document.getElementById('lview').style.display = 'flex';
+  document.getElementById('gbtn').disabled = true;
+
+  let mi = 0;
+  const iv = setInterval(() => { mi = (mi + 1) % LMSGS.length; document.getElementById('lmsg').textContent = LMSGS[mi]; }, 1600);
+
+  const prompt = `You are a senior TikTok creative strategist for BrightNow by Wardah Indonesia. Specialize in Gen Z / Gen Alpha content for Indonesian beauty market.
+
+${KB}
+
+BRIEF:
+- Objective: ${S.obj}
+- Product: ${S.prod}
+- Audience: ${S.aud}
+- Hook Style: ${S.hook}
+${ctx ? `- Extra Context: ${ctx}` : ''}
+${tone ? `- Tone: Make output ${tone}` : ''}
+
+Generate a complete TikTok content package. Use natural Bahasa Indonesia mixed with English like real TikTok ID creators. Be specific — NOT generic. Reference actual product ingredients, clinical numbers, and lifestyle contexts.
+
+Return ONLY valid JSON, no markdown fences:
+{"hooks":["h1","h2","h3","h4","h5","h6","h7","h8","h9","h10"],"angle":"2-3 sentence content angle","format":"e.g. 20s music-only","visual_hook":"what viewer sees in 0-2 seconds","structure":{"hook":"","tension":"","bridge":"","proof":"","payoff":"","cta":""},"script":[{"label":"HOOK 0-3s","vo":"","onscreen":"","note":""},{"label":"PROBLEM 3-8s","vo":"","onscreen":"","note":""},{"label":"BRIDGE 8-15s","vo":"","onscreen":"","note":""},{"label":"PROOF 15-25s","vo":"","onscreen":"","note":""},{"label":"PAYOFF 25-35s","vo":"","onscreen":"","note":""},{"label":"CTA 35-40s","vo":"","onscreen":"","note":""}],"talking_points":["p1","p2","p3","p4","p5"],"cta_options":["c1","c2","c3"],"caption":"TikTok caption max 150 chars Bahasa Indonesia","hashtags":["#t1","#t2","#t3","#t4","#t5","#t6","#t7","#t8","#t9","#t10"],"funnel_note":"funnel stage and why"}`;
+
+  try {
+    // Calls Netlify Function — API key stays safe on server
+    const r = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+    const raw = d.content.map(i => i.text || '').join('');
+    const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    S.out = JSON.parse(clean);
+    clearInterval(iv);
+    renderOut(S.out);
+  } catch (e) {
+    clearInterval(iv);
+    document.getElementById('lview').style.display = 'none';
+    document.getElementById('oview').innerHTML = `<div class="errbx"><strong>Error:</strong> ${e.message}</div>`;
+    document.getElementById('oview').style.display = 'block';
+  }
+  document.getElementById('gbtn').disabled = false;
+}
+
+function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+function renderOut(d) {
+  document.getElementById('lview').style.display = 'none';
+  const hooks = d.hooks.map((h, i) => `<div class="hcard"><span class="hnum">0${i + 1}</span><span class="htxt">${esc(h)}</span><button class="cpbtn" onclick="cp(this,${JSON.stringify(h)})">copy</button><button class="fbtn" onclick="fav(this,${JSON.stringify(h)})">♡</button></div>`).join('');
+  const script = d.script.map(b => `<div class="brow"><div class="beat-lbl">${esc(b.label)}</div><div class="bbod"><div>${esc(b.vo)}</div>${b.onscreen ? `<div class="bnote">text: "${esc(b.onscreen)}"</div>` : ''}${b.note ? `<div class="bnote">↳ ${esc(b.note)}</div>` : ''}</div></div>`).join('');
+  const struc = Object.entries(d.structure).map(([k, v]) => `<div class="srow"><div class="skey">${k}</div><div class="sval">${esc(v)}</div></div>`).join('');
+  const tps = d.talking_points.map((t, i) => `<div class="trow"><div class="tn">${i + 1}.</div><div class="tv">${esc(t)}</div></div>`).join('');
+  const ctas = d.cta_options.map(c => `<div class="ctabox">${esc(c)}</div>`).join('');
+  const hts = d.hashtags.map(h => `<span class="htag">${esc(h)}</span>`).join('');
+
+  const ov = document.getElementById('oview');
+  ov.innerHTML = `
+    <div class="ohdr">
+      <div><div class="otitle">Generated Output</div><div class="ometa">${esc(S.obj)} · ${esc(S.prod.split(' —')[0])} · ${esc(S.aud.split('/')[0].trim())}</div></div>
+    </div>
+    <div class="rrow">
+      <div class="rlbl">Regenerate with different tone:</div>
+      <button class="tbtn" onclick="doGen('funnier with Gen Z humor and slang')">Funnier</button>
+      <button class="tbtn" onclick="doGen('more emotional and personal storytelling')">Emotional</button>
+      <button class="tbtn" onclick="doGen('direct selling high urgency')">Hard Sell</button>
+      <button class="tbtn" onclick="doGen('authentic organic UGC not branded')">UGC Style</button>
+      <button class="tbtn" onclick="doGen('edgy and bold for Gen Z')">Edgy</button>
+      <button class="tbtn" onclick="doGen('brand-safe and professional')">Brand-Safe</button>
+    </div>
+    <div class="tabs">
+      <div class="tab on" onclick="swt(this,'th')">10 Hooks</div>
+      <div class="tab" onclick="swt(this,'ts')">Script</div>
+      <div class="tab" onclick="swt(this,'tst')">Structure</div>
+      <div class="tab" onclick="swt(this,'ttp')">Talking Pts</div>
+      <div class="tab" onclick="swt(this,'tpub')">Publish</div>
+      <div class="tab" onclick="swt(this,'tfav')">Saved ♡</div>
+    </div>
+    <div class="tc on" id="th">
+      <div class="blk"><div class="blbl">Content Angle</div><div class="bbody">${esc(d.angle)}</div><div style="margin-top:6px;font-size:11px;color:var(--dim)">Format: ${esc(d.format)}</div></div>
+      <div class="blk"><div class="blbl">Opening Visual (0-2s)</div><div class="bbody">${esc(d.visual_hook)}</div></div>
+      ${hooks}
+      <div class="acts"><button class="abtn" onclick="cpAll()">Copy all hooks</button><button class="abtn" onclick="doCSV()">Export CSV</button></div>
+    </div>
+    <div class="tc" id="ts">
+      <div class="blk"><div class="blbl">Video Script <button class="cpbtn" onclick="cpScript()">copy all</button></div>${script}</div>
+      <div class="blk"><div class="blbl">Funnel Note</div><div class="bbody">${esc(d.funnel_note)}</div></div>
+    </div>
+    <div class="tc" id="tst"><div class="blk"><div class="blbl">6-Beat Framework</div>${struc}</div></div>
+    <div class="tc" id="ttp"><div class="blk"><div class="blbl">Key Talking Points</div>${tps}</div></div>
+    <div class="tc" id="tpub">
+      <div class="blk"><div class="blbl">CTA Options</div>${ctas}</div>
+      <div class="blk"><div class="blbl">Caption <button class="cpbtn" onclick="cp(this,${JSON.stringify(d.caption)})">copy</button></div><div class="bbody">${esc(d.caption)}</div></div>
+      <div class="blk"><div class="blbl">Hashtags</div><div class="htags">${hts}</div></div>
+    </div>
+    <div class="tc" id="tfav"><div id="flist"></div></div>`;
+  ov.style.display = 'block';
+  renderFavs();
+}
+
+function swt(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tc').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  const tc = document.getElementById(id);
+  if (tc) tc.classList.add('on');
+  if (id === 'tfav') renderFavs();
+}
+
+function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 1800); }
+async function cp(btn, text) { await navigator.clipboard.writeText(text); const o = btn.textContent; btn.textContent = '✓'; setTimeout(() => btn.textContent = o, 1100); showToast('Copied!'); }
+function fav(btn, text) { if (!S.favs.includes(text)) { S.favs.push(text); localStorage.setItem('bn3f', JSON.stringify(S.favs)); btn.style.color = 'var(--pink)'; showToast('Saved ♡'); } }
+function renderFavs() {
+  const el = document.getElementById('flist'); if (!el) return;
+  if (!S.favs.length) { el.innerHTML = '<div class="empty" style="height:140px"><div class="empty-sub">No saved hooks yet. Click ♡ to save.</div></div>'; return; }
+  el.innerHTML = S.favs.map((f, i) => `<div class="fitem"><span>${esc(f)}</span><button class="delbtn" onclick="df(${i})">✕</button></div>`).join('') + `<div class="acts"><button class="abtn" onclick="cpFavs()">Copy all</button><button class="abtn" onclick="clrFavs()" style="color:var(--pink)">Clear all</button></div>`;
+}
+function df(i) { S.favs.splice(i, 1); localStorage.setItem('bn3f', JSON.stringify(S.favs)); renderFavs(); }
+function clrFavs() { S.favs = []; localStorage.removeItem('bn3f'); renderFavs(); }
+async function cpFavs() { await navigator.clipboard.writeText(S.favs.join('\n\n')); showToast('All favorites copied!'); }
+async function cpAll() { if (!S.out) return; await navigator.clipboard.writeText(S.out.hooks.map((h, i) => `${i + 1}. ${h}`).join('\n')); showToast('All 10 hooks copied!'); }
+async function cpScript() { if (!S.out) return; await navigator.clipboard.writeText(S.out.script.map(b => `[${b.label}]\nVO: ${b.vo}\nText: ${b.onscreen || '-'}\nNote: ${b.note || '-'}`).join('\n\n')); showToast('Script copied!'); }
+function doCSV() { if (!S.out) return; const rows = [['#', 'Hook', 'Angle', 'Format']]; S.out.hooks.forEach((h, i) => rows.push([i + 1, `"${h}"`, `"${S.out.angle}"`, `"${S.out.format}"`])); const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.map(r => r.join(',')).join('\n')); a.download = 'BrightNow_Hooks.csv'; a.click(); }
+</script>
+</body>
+</html>
