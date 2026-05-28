@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BrightNow Hook Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cyan: #00FFE7; --pink: #FF2D87; --yellow: #FFE600;
+  --purple: #BF5FFF; --green: #00FF9D;
+  --bg: #0A0A0F; --surface: #12121A; --card: #1A1A26;
+  --border: #2A2A3E; --text: #F0F0FF; --muted: #8888AA; --dim: #4A4A6A;
+  --font-d: 'Syne', sans-serif; --font-b: 'Space Grotesk', sans-serif; --font-m: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,231,0.012) 2px, rgba(0,255,231,0.012) 4px); pointer-events: none; z-index: 1000; }
+.hdr { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+.logo { display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 34px; height: 34px; background: linear-gradient(135deg, var(--cyan), var(--pink)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--font-d); font-weight: 800; font-size: 14px; color: #000; }
+.logo-text { font-family: var(--font-d); font-weight: 700; font-size: 15px; }
+.logo-text span { color: var(--cyan); }
+.badges { display: flex; gap: 6px; }
+.badge { font-family: var(--font-m); font-size: 10px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.05em; }
+.bc { background: rgba(0,255,231,0.1); color: var(--cyan); border: 1px solid rgba(0,255,231,0.2); }
+.bp { background: rgba(255,45,135,0.1); color: var(--pink); border: 1px solid rgba(255,45,135,0.2); }
+.main { display: grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 60px); }
+.left { background: var(--surface); border-right: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; max-height: calc(100vh - 60px); position: sticky; top: 60px; display: flex; flex-direction: column; gap: 1rem; }
+.slbl { font-family: var(--font-m); font-size: 10px; color: var(--cyan); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+.slbl::before { content: ''; width: 14px; height: 1px; background: var(--cyan); }
+.pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.pill { font-size: 11px; padding: 5px 10px; border-radius: 100px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; transition: all 0.12s; font-family: var(--font-b); }
+.pill:hover { border-color: var(--cyan); color: var(--cyan); }
+.pill.a0 { background: rgba(0,255,231,0.1); border-color: var(--cyan); color: var(--cyan); }
+.pill.a1 { background: rgba(0,255,157,0.1); border-color: var(--green); color: var(--green); }
+.pill.a2 { background: rgba(255,45,135,0.1); border-color: var(--pink); color: var(--pink); }
+.pill.a3 { background: rgba(191,95,255,0.1); border-color: var(--purple); color: var(--purple); }
+textarea { width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: var(--font-b); font-size: 12px; resize: none; height: 60px; line-height: 1.5; }
+textarea:focus { outline: none; border-color: var(--cyan); }
+textarea::placeholder { color: var(--dim); }
+.genbtn { width: 100%; padding: 12px; background: linear-gradient(135deg, var(--cyan), var(--pink)); border: none; border-radius: 8px; color: #000; font-family: var(--font-d); font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em; }
+.genbtn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,255,231,0.18); }
+.genbtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.right { padding: 1.75rem; background: var(--bg); overflow-y: auto; }
+.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 500px; gap: 14px; text-align: center; }
+.empty-icon { font-size: 40px; opacity: 0.2; }
+.empty-title { font-family: var(--font-d); font-size: 18px; font-weight: 700; color: var(--muted); }
+.empty-sub { font-size: 12px; color: var(--dim); max-width: 280px; line-height: 1.7; }
+.loader { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 420px; gap: 18px; }
+.spin { width: 36px; height: 36px; border: 2px solid var(--border); border-top-color: var(--cyan); border-radius: 50%; animation: sp 0.75s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.lmsg { font-family: var(--font-m); font-size: 11px; color: var(--cyan); animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+.ohdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.875rem; border-bottom: 1px solid var(--border); }
+.otitle { font-family: var(--font-d); font-size: 18px; font-weight: 800; background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.ometa { font-family: var(--font-m); font-size: 10px; color: var(--dim); margin-top: 2px; }
+.rrow { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; padding: 10px 12px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
+.rlbl { font-family: var(--font-m); font-size: 9px; color: var(--dim); width: 100%; margin-bottom: 3px; letter-spacing: 0.1em; text-transform: uppercase; }
+.tbtn { font-size: 11px; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; font-family: var(--font-b); transition: all 0.12s; }
+.tbtn:hover { border-color: var(--green); color: var(--green); }
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+.tab { font-size: 11px; padding: 8px 13px; color: var(--dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.12s; font-family: var(--font-m); letter-spacing: 0.05em; }
+.tab:hover { color: var(--muted); }
+.tab.on { color: var(--cyan); border-bottom-color: var(--cyan); }
+.tc { display: none; } .tc.on { display: block; }
+.hcard { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; transition: border-color 0.12s; }
+.hcard:hover { border-color: var(--cyan); }
+.hmeta { display: flex; flex-direction: column; gap: 4px; min-width: 60px; }
+.hnum { font-family: var(--font-m); font-size: 10px; color: var(--cyan); opacity: 0.5; }
+.htype { font-family: var(--font-m); font-size: 9px; color: var(--yellow); opacity: 0.7; }
+.htxt { font-size: 12px; line-height: 1.65; flex: 1; color: var(--text); }
+.hvisual { font-size: 10px; color: var(--muted); margin-top: 4px; font-style: italic; }
+.hbtns { display: flex; flex-direction: column; gap: 4px; }
+.cpbtn { font-size: 10px; padding: 3px 8px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--dim); cursor: pointer; white-space: nowrap; transition: all 0.12s; font-family: var(--font-m); }
+.cpbtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.fbtn { font-size: 10px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 5px; background: transparent; color: var(--dim); cursor: pointer; transition: all 0.12s; }
+.fbtn:hover { color: var(--pink); border-color: var(--pink); }
+.blk { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin-bottom: 0.75rem; }
+.blbl { font-family: var(--font-m); font-size: 9px; color: var(--pink); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 9px; display: flex; justify-content: space-between; align-items: center; }
+.bbody { font-size: 12px; line-height: 1.7; color: var(--text); }
+.brow { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.brow:last-child { border-bottom: none; }
+.beat-lbl { font-family: var(--font-m); font-size: 9px; color: var(--yellow); min-width: 82px; padding-top: 2px; text-transform: uppercase; letter-spacing: 0.05em; }
+.bbod { flex: 1; color: var(--text); line-height: 1.6; }
+.bnote { font-size: 10px; color: var(--muted); margin-top: 3px; font-style: italic; }
+.srow { display: flex; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.srow:last-child { border-bottom: none; }
+.skey { font-family: var(--font-m); font-size: 9px; color: var(--cyan); min-width: 65px; text-transform: uppercase; padding-top: 2px; letter-spacing: 0.05em; }
+.sval { flex: 1; color: var(--text); line-height: 1.6; }
+.trow { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.trow:last-child { border-bottom: none; }
+.tn { font-family: var(--font-m); font-size: 10px; color: var(--yellow); min-width: 18px; padding-top: 2px; }
+.tv { font-size: 12px; line-height: 1.55; color: var(--text); }
+.htags { display: flex; flex-wrap: wrap; gap: 5px; }
+.htag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(191,95,255,0.1); border: 1px solid rgba(191,95,255,0.22); color: var(--purple); font-family: var(--font-m); }
+.ctabox { padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; line-height: 1.65; color: var(--text); margin-bottom: 6px; background: rgba(0,255,231,0.03); }
+.checklist { list-style: none; }
+.checklist li { display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; align-items: flex-start; }
+.checklist li:last-child { border-bottom: none; }
+.check-icon { font-size: 11px; margin-top: 1px; flex-shrink: 0; }
+.check-pass { color: var(--green); }
+.check-text { color: var(--text); line-height: 1.5; }
+.acts { display: flex; gap: 6px; margin-top: 0.75rem; }
+.abtn { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; font-size: 11px; font-family: var(--font-b); transition: all 0.12s; text-align: center; }
+.abtn:hover { border-color: var(--cyan); color: var(--cyan); }
+.fitem { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 5px; font-size: 12px; color: var(--muted); line-height: 1.55; }
+.delbtn { background: transparent; border: none; color: var(--dim); cursor: pointer; font-size: 12px; flex-shrink: 0; transition: color 0.12s; }
+.delbtn:hover { color: var(--pink); }
+.errbx { background: rgba(255,45,135,0.08); border: 1px solid rgba(255,45,135,0.25); border-radius: 8px; padding: 14px; font-size: 12px; color: var(--pink); line-height: 1.65; }
+.toast { position: fixed; bottom: 22px; right: 22px; background: var(--card); border: 1px solid var(--green); border-radius: 8px; padding: 9px 14px; font-size: 11px; color: var(--green); font-family: var(--font-m); transform: translateY(60px); transition: transform 0.25s; z-index: 999; }
+.toast.show { transform: translateY(0); }
+.formula-badge { display: inline-block; font-family: var(--font-m); font-size: 10px; padding: 2px 7px; border-radius: 4px; background: rgba(255,230,0,0.1); border: 1px solid rgba(255,230,0,0.25); color: var(--yellow); margin-right: 6px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-mark">BN</div>
+    <div class="logo-text">BrightNow <span>Hook Gen</span></div>
+  </div>
+  <div class="badges">
+    <span class="badge bc">AI-POWERED</span>
+    <span class="badge bp">TIKTOK NATIVE</span>
+  </div>
+</header>
+
+<main class="main">
+  <aside class="left">
+    <div>
+      <div class="slbl">1. Funnel Objective</div>
+      <div class="pills">
+        <button class="pill a0" data-g="obj" data-v="Awareness">Awareness</button>
+        <button class="pill" data-g="obj" data-v="Consideration">Consideration</button>
+        <button class="pill" data-g="obj" data-v="Conversion">Conversion</button>
+        <button class="pill" data-g="obj" data-v="Product Education">Product Edu</button>
+        <button class="pill" data-g="obj" data-v="Engagement">Engagement</button>
+        <button class="pill" data-g="obj" data-v="Social Proof / Testimonial">Social Proof</button>
+        <button class="pill" data-g="obj" data-v="Trendjacking">Trendjacking</button>
+        <button class="pill" data-g="obj" data-v="Affiliate / BOFU">Affiliate/BOFU</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="slbl">2. Variant</div>
+      <div class="pills">
+        <button class="pill a1" data-g="prod" data-v="Oil Control — Vitamin C + Mugwort Clay — for oily skin, pores, anti-greasy">Oil Control</button>
+        <button class="pill" data-g="prod" data-v="Smooth Glow — for dull skin (kusam), uneven tone, brightening">Smooth Glow</button>
+        <button class="pill" data-g="prod" data-v="Both variants — Oil Control vs Smooth Glow comparison">Both Variants</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="slbl">3. Audience</div>
+      <div class="pills">
+        <button class="pill a2" data-g="aud" data-v="Anak sekolah SMP-SMA / Gen Alpha — school air, post-activity context">Anak Sekolah</button>
+        <button class="pill" data-g="aud" data-v="Gen Z usia 18-25 — early adults">Gen Z</button>
+        <button class="pill" data-g="aud" data-v="Face wash beginners — first-time skincare users">Skincare Beginners</button>
+        <button class="pill" data-g="aud" data-v="Oily skin / kulit berminyak">Oily Skin</button>
+        <button class="pill" data-g="aud" data-v="Dry / dull / textured skin (kusam, gradakan)">Dry/Dull Skin</button>
+        <button class="pill" data-g="aud" data-v="Acne-prone / sensitive skin">Acne-Prone</button>
+        <button class="pill" data-g="aud" data-v="Makeup wearers — anti-longsor, anti-patchy">Makeup Lovers</button>
+        <button class="pill" data-g="aud" data-v="TikTok FOMO skincare buyers — trend explorers">Trend Chasers</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="slbl">4. Hook Type</div>
+      <div class="pills">
+        <button class="pill" data-g="hook" data-v="H1 — Pain-Point Question">H1 Pain Question</button>
+        <button class="pill a3" data-g="hook" data-v="H2 — POV Narrative (school/daily context)">H2 POV Narrative</button>
+        <button class="pill" data-g="hook" data-v="H3 — STOP Correction (pattern interrupt)">H3 STOP Hook</button>
+        <button class="pill" data-g="hook" data-v="H4 — Outcome-First / Relief">H4 Outcome First</button>
+        <button class="pill" data-g="hook" data-v="H5 — Clickbait Reversal">H5 Clickbait Reversal</button>
+        <button class="pill" data-g="hook" data-v="H6 — Casual Discovery (iseng cobain)">H6 Casual Discovery</button>
+        <button class="pill" data-g="hook" data-v="H7 — Variant Selector / Decision Guide">H7 Variant Guide</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="slbl">5. Content Formula</div>
+      <div class="pills">
+        <button class="pill" data-g="formula" data-v="F1 — Problem-to-Product Switch (conversion)">F1 Problem Switch</button>
+        <button class="pill" data-g="formula" data-v="F2 — Amino Bubble Tech Drop (ingredient edu)">F2 Tech Drop</button>
+        <button class="pill a0" data-g="formula" data-v="F3 — POV Lifestyle Embed (awareness)">F3 POV Lifestyle</button>
+        <button class="pill" data-g="formula" data-v="F4 — Behavioral Correction STOP (consideration)">F4 STOP Correction</button>
+        <button class="pill" data-g="formula" data-v="F5 — Casual Discovery iseng cobain (trust)">F5 Casual Discovery</button>
+        <button class="pill" data-g="formula" data-v="F6 — Variant Selector jangan salah pilih (conversion)">F6 Variant Selector</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="slbl">6. Extra Context <span style="font-size:9px;opacity:0.4">(optional)</span></div>
+      <textarea id="ctx" placeholder="e.g. UTS/UAS season, ospek, post-PE, Ramadan, new collab..."></textarea>
+    </div>
+
+    <button class="genbtn" id="gbtn" onclick="doGen()">⚡ Generate Content</button>
+  </aside>
+
+  <section class="right" id="rpanel">
+    <div class="empty" id="eview">
+      <div class="empty-icon">✦</div>
+      <div class="empty-title">Configure & Generate</div>
+      <div class="empty-sub">Select funnel objective, variant, audience, hook type, and content formula — then hit Generate.</div>
+    </div>
+    <div class="loader" id="lview" style="display:none">
+      <div class="spin"></div>
+      <div class="lmsg" id="lmsg">Generating from BrightNow skill database...</div>
+    </div>
+    <div id="oview" style="display:none"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const S = {
+  obj: 'Awareness',
+  prod: 'Oil Control — Vitamin C + Mugwort Clay — for oily skin, pores, anti-greasy',
+  aud: 'Anak sekolah SMP-SMA / Gen Alpha — school air, post-activity context',
+  hook: 'H2 — POV Narrative (school/daily context)',
+  formula: 'F3 — POV Lifestyle Embed (awareness)',
+  out: null,
+  favs: JSON.parse(localStorage.getItem('bn4f') || '[]')
+};
+
+const ACLS = { obj: 'a0', prod: 'a1', aud: 'a2', hook: 'a3', formula: 'a0' };
+document.querySelectorAll('.pill').forEach(b => {
+  b.addEventListener('click', () => {
+    const g = b.dataset.g, c = ACLS[g];
+    document.querySelectorAll(`.pill[data-g="${g}"]`).forEach(p => p.classList.remove(c));
+    b.classList.add(c);
+    S[g] = b.dataset.v;
+  });
+});
+
+// ═══════════════════════════════════════════════
+// FULL SKILL KNOWLEDGE BASE
+// ═══════════════════════════════════════════════
+const KB = `# BrightNow TikTok Content Skill — Source of Truth
+
+## Brand Quick Reference
+- Brand: BrightNow by Wardah
+- Price: ~Rp 20,000–35,000
+- Hero Tech: Amino Bubble Tech — creates softer, gentler lather that cleanses without stripping skin
+- Hero Claim: Clinically substantiated brightening effect within 5 SECONDS ("cerah dalam 5 detik")
+- #1 Objection to always address: "Ga bikin ketarik/kering" — must appear in every content
+- Primary: TikTok Indonesia (@live.brightnow / @brightnow.w0rrylater)
+- Known KOLs: Nabila, Aqeela
+- Competitive position: Challenger brand — awareness exists but conversion gap is the core problem
+- Key retail CTA: "cek keranjang kuning/bawah" (TikTok Shop), Shopee, Tokopedia, Indomaret, Alfamart
+
+## Variants
+- Oil Control: oily skin, post-activity sweat, pore control, anti-greasy, Vitamin C + Mugwort Clay
+- Smooth Glow: dull skin (kusam), uneven tone, school/exam stress skin, brightening
+
+## 8 Non-Negotiable Content Rules
+R1 — Problem First, Brand Second: NEVER open with product name. First 1-3s must name/show a skin problem. Brand = resolution.
+R2 — Name Amino Bubble Tech correctly: name it on screen → one plain benefit ("busa lebih lembut, ga strip kulit") → show foam visually. Never just "formula canggih."
+R3 — Own the Ketarik/Keset Objection: every content must directly address or implicitly resolve it through sensory proof (foam close-up, post-wash skin feel).
+R4 — School Context is Priority Context: post-school, post-exam, post-olahraga, morning before school — these outperform generic "daily skincare" framing.
+R5 — The 5-Second Claim is the Anchor: deploy "cerah dalam 5 detik" as proof point. Frame as challenge ("coba buktiin sendiri") not just a claim.
+R6 — Sensory Proof > Verbal Claim: use specific, tactile language. "Busa lembut yang ga bikin keset" > "formula gentle."
+R7 — Keranjang Bawah is CTA Default: for conversion content close with "cek keranjang kuning/bawah" or TikTok Shop. NEVER "beli sekarang."
+R8 — Low-Fi > High-Production: casual, handheld, natural lighting beats polished studio for trust. Genuine expressions > scripted delivery.
+
+## Hook Taxonomy (H1-H7)
+H1 — Pain-Point Question: "Kulit kamu masih [problem] habis [occasion]?" → Best for: Awareness TOFU
+H2 — POV Narrative: "POV: [relatable moment]. [Skin problem]. [BrightNow resolution]." → Best for: Awareness, brand affinity
+H3 — STOP Correction: "STOP [bad behavior] — [why wrong]. [BrightNow as correction]." → Best for: Consideration
+H4 — Outcome-First/Relief: "Akhirnya nemuin [product] yang [result] — dan harganya [price]." → Best for: Awareness, re-engagement
+H5 — Clickbait Reversal: "Nyesel banget pake BrightNow..." → "...nyesel kenapa gak dari dulu." → Best for: Scroll-stop, virality
+H6 — Casual Discovery: "Iseng cobain BrightNow [variant]..." → "eh ternyata [surprising result]." → Best for: Trust, KOL content
+H7 — Variant Selector: "Kulit [problem A]: pilih [variant]. Kulit [problem B]: pilih [other]." → Best for: Conversion
+
+## Content Formula Library (F1-F6)
+F1 — Problem-to-Product Switch: Pain Hook → Before Visual → Product In → Ingredient/Tech → After Proof → CTA. Best for conversion.
+F2 — Amino Bubble Tech Drop: "Ada Amino Bubble Tech-nya" → Plain Benefit → Foam Close-Up → 5-Detik Claim → CTA. Best for consideration/ingredient edu.
+F3 — POV Lifestyle Embed: POV School/Daily Context → Skin Problem → BrightNow in Routine → Transformation → Soft CTA. Best for awareness, Gen Z affinity.
+F4 — Behavioral Correction: "STOP [X]" → Why Wrong → BrightNow as Right Choice → Result. Best for consideration, behavior change.
+F5 — Casual Discovery: "Iseng cobain..." → Neutral Expectation → Surprising Result → Genuine Reaction → Soft Recommend. Best for trust, must feel unscripted.
+F6 — Variant Selector: "Jangan Salah Pilih" → Skin Diagnosis → Matching → Price Anchor → CTA. Best for conversion, TikTok Shop.
+
+## Funnel-to-Formula Mapping
+Awareness → F3, F5 | Hook: H1, H2, H6 | CTA: Soft / no CTA
+Consideration → F2, F4 | Hook: H3, H5 | CTA: Link di bio / save video
+Conversion → F1, F6 | Hook: H4, H7 | CTA: Keranjang bawah + urgency
+
+## Tone & Voice
+- Register: Casual Gen Z — lowercase, conversational, emoji OK
+- Authority: Knowledgeable friend, not clinical expert
+- Energy: Warm and relatable, NOT hype-y
+- Honesty: "Iseng cobain" energy — never oversell
+- Language: Indonesian primary; English words OK where naturally Gen Z ("low pH", "skin barrier", "glow")
+- AVOID: formal product claims, "formula canggih", English-only copy, stiff KOL delivery
+- F1/F4: more direct, slightly urgent | F2: smart friend explaining | F3/F5: most casual, lowest-fi | F6: helpful advisor
+
+## White Space to Own
+- Post-school / post-activity skin reset (owned territory — prioritize)
+- "5 detik cerah" proof-based content (owned territory — prioritize)
+- Amino Bubble Tech ingredient education (owned territory — prioritize)
+- Night routine after study/exam as emotional release (unowned white space — high priority)
+- Skin anxiety during UTS/UAS/ospek season (unowned white space)
+- "Budget skincare yang beneran kerja" for Gen Alpha entering SMA (unowned white space)
+
+## Competitive Context
+- SCORA: owns ingredient education (Salicylic Acid), behavioral correction hooks — DO NOT copy their medical/acne tone
+- G2G: owns aspirational before/after, K-Pop skin aspiration — DO NOT copy their K-Pop framing (not authentic to Wardah)
+- BrightNow's unique angle: SPEED of result (5 detik) + GENTLENESS of tech (Amino Bubble Tech ≠ harsh foam) + SCHOOL SKIN RESET occasion
+
+## Quick Generation Checklist (verify before output)
+✓ Hook names a problem before naming the brand (R1)
+✓ Amino Bubble Tech named correctly if referenced (R2)
+✓ Ketarik/keset objection addressed or implicitly resolved (R3)
+✓ School/daily life context used where relevant (R4)
+✓ "5 detik" claim present in consideration/conversion content (R5)
+✓ Sensory language used for foam/post-wash feel (R6)
+✓ CTA references keranjang bawah for conversion content (R7)
+✓ Visual direction is low-fi/authentic, not polished ad (R8)
+✓ Indonesian language primary, Gen Z register`;
+
+const LMSGS = [
+  'Loading BrightNow skill database...',
+  'Applying hook taxonomy...',
+  'Checking content rules...',
+  'Crafting Gen Z copy...',
+  'Almost done!'
+];
+
+async function doGen(tone = '') {
+  const ctx = document.getElementById('ctx').value.trim();
+  document.getElementById('eview').style.display = 'none';
+  document.getElementById('oview').style.display = 'none';
+  document.getElementById('lview').style.display = 'flex';
+  document.getElementById('gbtn').disabled = true;
+
+  let mi = 0;
+  const iv = setInterval(() => {
+    mi = (mi + 1) % LMSGS.length;
+    document.getElementById('lmsg').textContent = LMSGS[mi];
+  }, 1500);
+
+  const prompt = `You are an expert TikTok content strategist for BrightNow by Wardah Indonesia. Follow the skill rules EXACTLY.
+
+${KB}
+
+CONTENT BRIEF:
+- Funnel Objective: ${S.obj}
+- Variant: ${S.prod}
+- Audience: ${S.aud}
+- Hook Type: ${S.hook}
+- Content Formula: ${S.formula}
+${ctx ? `- Extra Context: ${ctx}` : ''}
+${tone ? `- Tone modifier: ${tone}` : ''}
+
+INSTRUCTIONS:
+1. Apply the hook type and content formula specified above
+2. Follow ALL 8 content rules (R1-R8) — especially R1 (problem first), R3 (ketarik/keset), R4 (school context), R5 (5 detik claim)
+3. Use casual Indonesian Gen Z language — lowercase OK, conversational, warm not hype-y
+4. Keep ALL text values SHORT (max 15 words each field)
+5. Each hook must specify its type code (H1-H7) and match the selected hook type
+
+Return ONLY a valid JSON object with exactly these keys:
+- hooks: array of 10 objects, each with keys: copy (the hook text), type (H1-H7 code), funnel (Awareness/Consideration/Conversion), visual (1 short visual note)
+- formula_used: which formula code F1-F6
+- angle: one sentence content angle
+- format: e.g. "20s music-only" or "45s full VO"
+- visual_hook: one sentence describing opening 0-2 seconds
+- structure: object with keys hook/tension/bridge/proof/payoff/cta (each one short sentence)
+- script: array of 6 objects with keys label/vo/onscreen/note (all short)
+- talking_points: array of 5 short strings
+- cta_options: array of 3 strings (use keranjang bawah for conversion)
+- caption: TikTok caption max 100 chars Bahasa Indonesia
+- hashtags: array of 10 hashtag strings
+- checklist: array of 8 strings, each starting with PASS or WARN, describing rule compliance`;
+
+  try {
+    const r = await fetch('/.netlify/functions/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+    const raw = d.content.map(i => i.text || '').join('');
+    const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    S.out = JSON.parse(clean);
+    clearInterval(iv);
+    renderOut(S.out);
+  } catch (e) {
+    clearInterval(iv);
+    document.getElementById('lview').style.display = 'none';
+    document.getElementById('oview').innerHTML = `<div class="errbx"><strong>Error:</strong> ${e.message}</div>`;
+    document.getElementById('oview').style.display = 'block';
+  }
+  document.getElementById('gbtn').disabled = false;
+}
+
+function esc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderOut(d) {
+  document.getElementById('lview').style.display = 'none';
+
+  const hooks = (d.hooks || []).map((h, i) => {
+    const hook = typeof h === 'string' ? { copy: h, type: '', funnel: '', visual: '' } : h;
+    return `<div class="hcard">
+      <div class="hmeta">
+        <span class="hnum">0${i + 1}</span>
+        ${hook.type ? `<span class="htype">${esc(hook.type)}</span>` : ''}
+      </div>
+      <div style="flex:1">
+        <div class="htxt">${esc(hook.copy || hook)}</div>
+        ${hook.visual ? `<div class="hvisual">📹 ${esc(hook.visual)}</div>` : ''}
+      </div>
+      <div class="hbtns">
+        <button class="cpbtn" onclick="cp(this,${JSON.stringify(hook.copy || hook)})">copy</button>
+        <button class="fbtn" onclick="fav(this,${JSON.stringify(hook.copy || hook)})">♡</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  const script = (d.script || []).map(b => `
+    <div class="brow">
+      <div class="beat-lbl">${esc(b.label)}</div>
+      <div class="bbod">
+        <div>${esc(b.vo)}</div>
+        ${b.onscreen ? `<div class="bnote">text: "${esc(b.onscreen)}"</div>` : ''}
+        ${b.note ? `<div class="bnote">↳ ${esc(b.note)}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  const struc = Object.entries(d.structure || {}).map(([k, v]) =>
+    `<div class="srow"><div class="skey">${k}</div><div class="sval">${esc(v)}</div></div>`
+  ).join('');
+
+  const tps = (d.talking_points || []).map((t, i) =>
+    `<div class="trow"><div class="tn">${i + 1}.</div><div class="tv">${esc(t)}</div></div>`
+  ).join('');
+
+  const ctas = (d.cta_options || []).map(c => `<div class="ctabox">${esc(c)}</div>`).join('');
+  const hts = (d.hashtags || []).map(h => `<span class="htag">${esc(h)}</span>`).join('');
+
+  const checklist = (d.checklist || []).map(c => {
+    const pass = c.startsWith('PASS');
+    return `<li class="checklist-item">
+      <span class="check-icon ${pass ? 'check-pass' : ''}">${pass ? '✓' : '⚠'}</span>
+      <span class="check-text">${esc(c.replace(/^(PASS|WARN)[:\s-]*/i, ''))}</span>
+    </li>`;
+  }).join('');
+
+  const formulaBadge = d.formula_used ? `<span class="formula-badge">${esc(d.formula_used)}</span>` : '';
+
+  const ov = document.getElementById('oview');
+  ov.innerHTML = `
+    <div class="ohdr">
+      <div>
+        <div class="otitle">Generated Output</div>
+        <div class="ometa">${esc(S.obj)} · ${esc(S.prod.split(' —')[0])} · ${esc(S.aud.split('/')[0].trim())}</div>
+      </div>
+      <div>${formulaBadge}</div>
+    </div>
+
+    <div class="rrow">
+      <div class="rlbl">Regenerate with different tone:</div>
+      <button class="tbtn" onclick="doGen('funnier with Gen Z humor and slang')">Funnier</button>
+      <button class="tbtn" onclick="doGen('more emotional and personal storytelling')">Emotional</button>
+      <button class="tbtn" onclick="doGen('direct selling high urgency keranjang bawah')">Hard Sell</button>
+      <button class="tbtn" onclick="doGen('authentic organic UGC iseng cobain energy')">UGC/Organic</button>
+      <button class="tbtn" onclick="doGen('edgy and bold for Gen Z scroll-stop')">Edgy</button>
+      <button class="tbtn" onclick="doGen('brand-safe professional tone')">Brand-Safe</button>
+    </div>
+
+    <div class="tabs">
+      <div class="tab on" onclick="swt(this,'th')">10 Hooks</div>
+      <div class="tab" onclick="swt(this,'ts')">Script</div>
+      <div class="tab" onclick="swt(this,'tst')">Structure</div>
+      <div class="tab" onclick="swt(this,'ttp')">Talking Pts</div>
+      <div class="tab" onclick="swt(this,'tpub')">Publish</div>
+      <div class="tab" onclick="swt(this,'tchk')">Rules ✓</div>
+      <div class="tab" onclick="swt(this,'tfav')">Saved ♡</div>
+    </div>
+
+    <div class="tc on" id="th">
+      <div class="blk">
+        <div class="blbl">Content Angle</div>
+        <div class="bbody">${esc(d.angle)}</div>
+        <div style="margin-top:6px;font-size:11px;color:var(--dim)">Format: ${esc(d.format)} &nbsp;|&nbsp; Opening: ${esc(d.visual_hook)}</div>
+      </div>
+      ${hooks}
+      <div class="acts">
+        <button class="abtn" onclick="cpAll()">Copy all hooks</button>
+        <button class="abtn" onclick="doCSV()">Export CSV</button>
+      </div>
+    </div>
+
+    <div class="tc" id="ts">
+      <div class="blk">
+        <div class="blbl">Video Script <button class="cpbtn" onclick="cpScript()">copy all</button></div>
+        ${script}
+      </div>
+    </div>
+
+    <div class="tc" id="tst">
+      <div class="blk"><div class="blbl">6-Beat Framework</div>${struc}</div>
+    </div>
+
+    <div class="tc" id="ttp">
+      <div class="blk"><div class="blbl">Key Talking Points</div>${tps}</div>
+    </div>
+
+    <div class="tc" id="tpub">
+      <div class="blk"><div class="blbl">CTA Options</div>${ctas}</div>
+      <div class="blk">
+        <div class="blbl">Caption <button class="cpbtn" onclick="cp(this,${JSON.stringify(d.caption || '')})">copy</button></div>
+        <div class="bbody">${esc(d.caption)}</div>
+      </div>
+      <div class="blk"><div class="blbl">Hashtags</div><div class="htags">${hts}</div></div>
+    </div>
+
+    <div class="tc" id="tchk">
+      <div class="blk">
+        <div class="blbl">Content Rules Compliance (R1–R8)</div>
+        <ul class="checklist">${checklist}</ul>
+      </div>
+    </div>
+
+    <div class="tc" id="tfav"><div id="flist"></div></div>`;
+
+  ov.style.display = 'block';
+  renderFavs();
+}
+
+function swt(el, id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tc').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  const tc = document.getElementById(id);
+  if (tc) tc.classList.add('on');
+  if (id === 'tfav') renderFavs();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+async function cp(btn, text) {
+  await navigator.clipboard.writeText(text);
+  const o = btn.textContent;
+  btn.textContent = '✓';
+  setTimeout(() => btn.textContent = o, 1100);
+  showToast('Copied!');
+}
+
+function fav(btn, text) {
+  if (!S.favs.includes(text)) {
+    S.favs.push(text);
+    localStorage.setItem('bn4f', JSON.stringify(S.favs));
+    btn.style.color = 'var(--pink)';
+    showToast('Saved ♡');
+  }
+}
+
+function renderFavs() {
+  const el = document.getElementById('flist');
+  if (!el) return;
+  if (!S.favs.length) {
+    el.innerHTML = '<div class="empty" style="height:120px"><div class="empty-sub">No saved hooks yet. Click ♡ to save.</div></div>';
+    return;
+  }
+  el.innerHTML = S.favs.map((f, i) =>
+    `<div class="fitem"><span>${esc(f)}</span><button class="delbtn" onclick="df(${i})">✕</button></div>`
+  ).join('') + `<div class="acts">
+    <button class="abtn" onclick="cpFavs()">Copy all</button>
+    <button class="abtn" onclick="clrFavs()" style="color:var(--pink)">Clear all</button>
+  </div>`;
+}
+
+function df(i) { S.favs.splice(i, 1); localStorage.setItem('bn4f', JSON.stringify(S.favs)); renderFavs(); }
+function clrFavs() { S.favs = []; localStorage.removeItem('bn4f'); renderFavs(); }
+async function cpFavs() { await navigator.clipboard.writeText(S.favs.join('\n\n')); showToast('All favorites copied!'); }
+
+async function cpAll() {
+  if (!S.out) return;
+  const text = (S.out.hooks || []).map((h, i) => {
+    const copy = typeof h === 'string' ? h : h.copy;
+    return `${i + 1}. ${copy}`;
+  }).join('\n');
+  await navigator.clipboard.writeText(text);
+  showToast('All 10 hooks copied!');
+}
+
+async function cpScript() {
+  if (!S.out) return;
+  const txt = (S.out.script || []).map(b =>
+    `[${b.label}]\nVO: ${b.vo}\nText: ${b.onscreen || '-'}\nNote: ${b.note || '-'}`
+  ).join('\n\n');
+  await navigator.clipboard.writeText(txt);
+  showToast('Script copied!');
+}
+
+function doCSV() {
+  if (!S.out) return;
+  const rows = [['#', 'Hook Type', 'Funnel', 'Hook Copy', 'Visual Note']];
+  (S.out.hooks || []).forEach((h, i) => {
+    const hook = typeof h === 'string' ? { copy: h, type: '', funnel: '', visual: '' } : h;
+    rows.push([i + 1, `"${hook.type || ''}"`, `"${hook.funnel || ''}"`, `"${hook.copy || ''}"`, `"${hook.visual || ''}"`]);
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
+  a.download = 'BrightNow_Hooks.csv';
+  a.click();
+}
+</script>
+</body>
+</html>
