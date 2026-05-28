@@ -27,7 +27,6 @@ exports.handler = async function (event) {
       throw new Error(data.error?.message || "Groq API error");
     }
 
-    // Normalize Groq response to match what index.html expects
     const normalized = {
       content: [
         {
